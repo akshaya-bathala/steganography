@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+  <h2>Audio Steganography</h2>
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+      <li {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+  <form method="POST" enctype="multipart/form-data" action="{% url 'audio_steg' %}">
+    {% csrf_token %}
+    <input type="file" name="audio_file" required>
+    <input type="text" name="secret_code" placeholder="Secret Code" required>
+    <textarea name="message" placeholder="Message (for encryption)"></textarea>
+    <select name="action">
+      <option value="encrypt">Encrypt</option>
+      <option value="decrypt">Decrypt</option>
+    </select>
+    <button type="submit">Process</button>
+  </form>
+</div>
+{% endblock %}
