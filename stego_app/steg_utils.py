@@ -1,9 +1,31 @@
 from PIL import Image
 import numpy as np
 import cv2
+from Crypto.Cipher import DES
+from Crypto.Util.Padding import pad, unpad
+import base64
+
+SECRET_KEY = b'8bytekey'
+
+def des_encrypt(message: str) -> str:
+    cipher = DES.new(SECRET_KEY, DES.MODE_ECB)
+    padded_text = pad(message.encode('utf-8'), DES.block_size)
+    encrypted_bytes = cipher.encrypt(padded_text)
+    encrypted_b64 = base64.b64encode(encrypted_bytes).decode('utf-8')
+    print(encrypted_b64)
+    return encrypted_b64
+
+def des_decrypt(encrypted_b64: str) -> str:
+    cipher = DES.new(SECRET_KEY, DES.MODE_ECB)
+    encrypted_bytes = base64.b64decode(encrypted_b64)
+    decrypted_padded = cipher.decrypt(encrypted_bytes)
+    decrypted = unpad(decrypted_padded, DES.block_size).decode('utf-8')
+    print(decrypted)
+    return decrypted
 
 
 def encode_image(img_path, message, out_path):
+    message = des_encrypt(message)
     img = Image.open(img_path).convert('RGB')
     data = np.array(img)
     binary_msg = ''.join(format(ord(i), '08b') for i in message + '#####')
@@ -32,13 +54,17 @@ def decode_image(img_path):
             if msg.endswith("####"):
                 break
         msg += chr(int(ch, 2))
-    return msg.replace("####", "")
+    msg.replace("####", "")
+    msg = des_decrypt(msg)
+    return msg
+
 
 import wave
 
 
 # ---------- AUDIO ----------
 def encode_audio(audio_path, message, out_path):
+    message = des_encrypt(message)
     audio = wave.open(audio_path, mode='rb')
     frame_bytes = bytearray(list(audio.readframes(audio.getnframes())))
 
@@ -73,7 +99,9 @@ def decode_audio(audio_path):
             break
 
     audio.close()
-    return message.replace('#####', '')
+    message.replace('#####', '')
+    message = des_decrypt(message)
+    return message
 
 # ---------- VIDEO ----------
 
@@ -81,6 +109,7 @@ import cv2
 import numpy as np
 
 def encode_video(video_path, message, out_path):
+    message = des_encrypt(message)
     cap = cv2.VideoCapture(video_path)
     width  = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -151,4 +180,6 @@ def decode_video(video_path):
                     return message.replace('#####', '')
 
     cap.release()
-    return message.replace('#####', '')
+    message.replace('#####', '')
+    message = des_decrypt(message)
+    return message
